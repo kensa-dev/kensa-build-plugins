@@ -1,0 +1,28 @@
+name: Create Github Release
+on:
+  repository_dispatch:
+    types: [kensa-gradle-plugin-release]
+permissions:
+  contents: read
+
+env:
+  GIT_TAG_NAME: ${{ github.event.client_payload.version }}
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.1.1
+      - run: make create-release-note
+      - uses: softprops/action-gh-release@v2.0.4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: ${{ github.event.client_payload.version }}
+          name: ${{ github.event.client_payload.version }}
+          body_path: RN.md
+          draft: false
+          prerelease: false
+          files: |
+            cli/build/bin/version.txt
