@@ -1,7 +1,7 @@
 name: Create Github Release
 on:
   repository_dispatch:
-    types: [kensa-gradle-plugin-release]
+    types: [kensa-build-plugins-release]
 permissions:
   contents: read
 

@@ -23,6 +23,8 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
       - name: Publish to Gradle Plugin Portal
+        env:
+          GIT_TAG_NAME: ${{ github.ref_name }}
         run: make publish-gradle-plugin
 
   DispatchReleaseEvent:
@@ -37,6 +39,6 @@ jobs:
         uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.GH_TOKEN }}
-          repository: kensa-dev/kensa
-          event-type: kensa-release
+          repository: kensa-dev/kensa-build-plugins
+          event-type: kensa-build-plugins-release
           client-payload: '{"version": "${{ github.ref_name }}"}'
