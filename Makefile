@@ -44,4 +44,5 @@ publish-gradle-plugin:
 
 .PHONY: validate-gradle-plugin
 validate-gradle-plugin:
-	./gradlew --build-cache --no-daemon publishPlugins --validate-only
+	./gradlew --build-cache --no-daemon publishPlugins --validate-only \
+		-PreleaseVersion="$(GIT_TAG_NAME)" \
