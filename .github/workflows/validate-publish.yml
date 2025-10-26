@@ -13,7 +13,6 @@ env:
 jobs:
   ValidatePublishGradlePlugin:
     runs-on: ubuntu-latest
-    if: ${{ !endsWith(github.ref_name, '-SNAPSHOT') }}
     steps:
       - uses: actions/checkout@v4
         with:
