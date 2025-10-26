@@ -20,6 +20,13 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
           cache: 'gradle'
+      - name: Verify required secrets
+        run: |
+            [ -n "${GRADLE_PUBLISH_KEY:-}" ] || { echo "Missing GRADLE_PUBLISH_KEY"; exit 1; }
+            [ -n "${GRADLE_PUBLISH_SECRET:-}" ] || { echo "Missing GRADLE_PUBLISH_SECRET"; exit 1; }
+          env:
+            GRADLE_PUBLISH_KEY: ${{ secrets.GRADLE_PUBLISH_KEY }}
+            GRADLE_PUBLISH_SECRET: ${{ secrets.GRADLE_PUBLISH_SECRET }}
       - name: Validate Gradle Plugin
         env:
           GRADLE_PUBLISH_KEY: ${{ secrets.GRADLE_PUBLISH_KEY }}
