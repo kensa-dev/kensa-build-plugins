@@ -24,8 +24,8 @@ gradlePlugin {
             implementationClass = "dev.kensa.gradle.KensaGradlePlugin"
             displayName = "Kensa Gradle Plugin"
             description = "Gradle plugin for Kensa compiler plugin integration"
-            website.set("https://kensa.dev")
-            vcsUrl.set("https://github.com/kensa-dev/kensa")
+            website.set("https://kensa.dev/build-plugins")
+            vcsUrl.set("https://github.com/kensa-dev/kensa-build-plugins")
             tags.set(listOf("kotlin", "compiler-plugin", "testing", "kensa"))        }
     }
 }
