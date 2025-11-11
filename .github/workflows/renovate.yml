@@ -23,3 +23,5 @@ jobs:
           configurationFile: renovate.json
         env:
           LOG_LEVEL: info
+          RENOVATE_REPOSITORIES: ${{ github.repository }}
+          RENOVATE_ONBOARDING: "false"
