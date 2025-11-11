@@ -1,14 +1,14 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
-  "regexManagers": [
+  "customManagers": [
     {
-      "fileMatch": ["^version\\.txt$"],
+      "customType": "regex",
+      "managerFilePatterns": ["/^version\\.txt$/"],
       "matchStrings": ["^(?<currentValue>\\S+)$"],
       "datasourceTemplate": "maven",
       "packageNameTemplate": "dev.kensa:kensa-core",
-      "versioningTemplate": "maven",
-      "registryUrls": ["https://central.sonatype.com/artifact"]
+      "versioningTemplate": "maven"
     }
   ],
   "automerge": true,
