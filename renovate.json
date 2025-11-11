@@ -7,7 +7,8 @@
       "matchStrings": ["^(?<currentValue>\\S+)$"],
       "datasourceTemplate": "maven",
       "packageNameTemplate": "dev.kensa:kensa-core",
-      "versioningTemplate": "maven"
+      "versioningTemplate": "maven",
+      "registryUrls": ["https://central.sonatype.com/artifact"]
     }
   ],
   "automerge": true,
