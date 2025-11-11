@@ -1,6 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
+  "dependencyDashboard": false,
   "customManagers": [
     {
       "customType": "regex",
@@ -11,8 +12,12 @@
       "versioningTemplate": "maven"
     }
   ],
+  "packageRules": [
+    { "matchManagers": ["gradle", "github-actions", "dockerfile", "npm"], "enabled": false }
+  ],
   "automerge": true,
-  "automergeType": "pr",
-  "platformAutomerge": true,
-  "rebaseWhen": "behind-base-branch"
+  "automergeType": "branch",
+  "platformAutomerge": false,
+  "rebaseWhen": "behind-base-branch",
+  "requiredStatusChecks": ["Build"]
 }
