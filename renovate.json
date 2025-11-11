@@ -1,0 +1,18 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "regexManagers": [
+    {
+      "fileMatch": ["^version\\.txt$"],
+      "matchStrings": ["^(?<currentValue>\\S+)$"],
+      "datasourceTemplate": "maven",
+      "packageNameTemplate": "dev.kensa:kensa-core",
+      "versioningTemplate": "maven"
+    }
+  ],
+  "automerge": true,
+  "automergeType": "pr",
+  "platformAutomerge": true,
+  "rebaseWhen": "behind-base-branch",
+  "requiredStatusChecks": ["build"]
+}
