@@ -19,5 +19,5 @@
   "automergeType": "branch",
   "platformAutomerge": false,
   "rebaseWhen": "behind-base-branch",
-  "requiredStatusChecks": ["Build"]
+  "requiredStatusChecks": ["build"]
 }

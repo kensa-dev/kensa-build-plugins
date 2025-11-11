@@ -1,10 +1,6 @@
 name: Build
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - 'master'
-      - 'renovate/**'
   pull_request:
     branches:
       - '*'
