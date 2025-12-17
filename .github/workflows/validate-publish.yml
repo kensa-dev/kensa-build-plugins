@@ -20,13 +20,6 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
           cache: 'gradle'
-      - name: Debug Environment Variables
-        env:
-          HAS_KEY: ${{ secrets.GRADLE_PUBLISH_KEY != '' }}
-          HAS_SECRET: ${{ secrets.GRADLE_PUBLISH_SECRET != '' }}
-        run: |
-          echo "GRADLE_PUBLISH_KEY is set: $HAS_KEY"
-          echo "GRADLE_PUBLISH_SECRET is set: $HAS_SECRET"
       - name: Validate Gradle Plugin
         env:
           GRADLE_PUBLISH_KEY: ${{ secrets.GRADLE_PUBLISH_KEY }}
