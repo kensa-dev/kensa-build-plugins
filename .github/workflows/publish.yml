@@ -39,6 +39,6 @@ jobs:
         uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.GH_TOKEN }}
-          repository: kensa-dev/kensa-build-plugins
-          event-type: kensa-build-plugins-release
+          repository: kensa-dev/build-plugins
+          event-type: build-plugins-release
           client-payload: '{"version": "${{ github.ref_name }}"}'
