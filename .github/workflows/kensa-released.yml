@@ -1,0 +1,69 @@
+name: Kensa Released
+
+# Triggered by kensa-dev/kensa publish.yml after a successful Kensa release.
+# Pins this repo to the new Kensa version, verifies the build, and stages a draft GitHub
+# release. Publishing the draft (UI or `gh release edit --draft=false`) creates the tag,
+# which fires publish.yml and pushes the plugin to the Gradle Plugin Portal.
+
+on:
+  repository_dispatch:
+    types: [kensa-released]
+
+permissions:
+  contents: write
+
+env:
+  KENSA_VERSION: ${{ github.event.client_payload.version }}
+  GIT_TAG_NAME: ${{ github.event.client_payload.version }}
+
+jobs:
+  prepare-draft-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          ref: master
+          fetch-depth: 0
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Pin to new Kensa version
+        run: |
+          echo "${KENSA_VERSION}" > kensa-core-version.txt
+          echo "${KENSA_VERSION}" > version.txt
+
+      - name: Verify build against new kensa-core
+        run: ./gradlew check --no-daemon
+
+      - name: Commit version bumps
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add kensa-core-version.txt version.txt
+          if git diff --cached --quiet; then
+            echo "No version changes to commit (already at ${KENSA_VERSION})."
+          else
+            git commit -m "Bump to ${KENSA_VERSION} (kensa release)"
+            git push origin HEAD:master
+          fi
+
+      - name: Generate release notes
+        run: make create-release-note
+
+      - name: Create draft GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: ${{ env.KENSA_VERSION }}
+          name: ${{ env.KENSA_VERSION }}
+          body_path: RN.md
+          draft: true
+          prerelease: false
+          target_commitish: master

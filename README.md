@@ -33,3 +33,12 @@ kensa {
 ```
 
 Build as normal; the plugin attaches to the selected compilations.
+
+## Documentation
+
+User documentation lives at **[kensa.dev](https://kensa.dev/docs/intro)**.
+
+Plugin-specific guides:
+- **[Gradle plugin — site mode](https://kensa.dev/docs/site-mode/gradle)**
+- **[Maven plugin — site mode](https://kensa.dev/docs/site-mode/maven)**
+- **[Publishing in CI](https://kensa.dev/docs/site-mode/ci)**
