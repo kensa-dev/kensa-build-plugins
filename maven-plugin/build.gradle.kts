@@ -6,6 +6,7 @@ plugins {
 
 dependencies {
     implementation(project(":site-common"))
+    implementation("org.jetbrains.kotlin:kotlin-stdlib")
     compileOnly(libs.maven.plugin.api)
     compileOnly(libs.maven.core)
     compileOnly(libs.maven.plugin.annotations)

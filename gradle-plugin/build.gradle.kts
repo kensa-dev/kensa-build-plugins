@@ -15,6 +15,7 @@ buildConfig {
     useKotlinOutput { topLevelConstants = true }
     buildConfigField("KENSA_VERSION", provider { "${project.version}" })
     buildConfigField("KENSA_CORE_VERSION", kensaCoreVersion)
+    buildConfigField("MIN_KOTLIN_VERSION", libs.versions.kotlin.get())
 }
 
 dependencies {
