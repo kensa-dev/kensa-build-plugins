@@ -4,6 +4,7 @@ plugins {
 }
 
 dependencies {
+    compileOnly("org.jetbrains.kotlin:kotlin-stdlib")
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.kotest.assertions.core)
     testRuntimeOnly(libs.junit.platform.launcher)

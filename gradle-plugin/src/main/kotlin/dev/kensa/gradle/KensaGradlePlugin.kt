@@ -1,7 +1,10 @@
 package dev.kensa.gradle
 
+import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
+import org.gradle.util.GradleVersion
+import org.jetbrains.kotlin.gradle.plugin.KotlinBasePlugin
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilerPluginSupportPlugin
 import org.jetbrains.kotlin.gradle.plugin.SubpluginArtifact
@@ -10,6 +13,16 @@ import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 class KensaGradlePlugin : KotlinCompilerPluginSupportPlugin {
 
     override fun apply(target: Project) {
+        target.plugins.withType(KotlinBasePlugin::class.java) { kotlinPlugin ->
+            val applied = kotlinPlugin.pluginVersion
+            if (GradleVersion.version(applied) < GradleVersion.version(MIN_KOTLIN_VERSION)) {
+                throw GradleException(
+                    "dev.kensa.gradle-plugin requires Kotlin >= $MIN_KOTLIN_VERSION but the project applies Kotlin $applied. " +
+                            "Update the Kotlin plugin version."
+                )
+            }
+        }
+
         target.extensions.create("kensa", KensaExtension::class.java)
 
         target.afterEvaluate { project ->

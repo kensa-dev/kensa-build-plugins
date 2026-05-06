@@ -76,7 +76,7 @@ class SiteModeFunctionalTest {
             """
             plugins {
                 id("dev.kensa.gradle-plugin")
-                id("org.jetbrains.kotlin.jvm") version "2.2.21"
+                id("org.jetbrains.kotlin.jvm") version "2.3.21"
             }
 
             repositories {
@@ -170,7 +170,11 @@ class SiteModeFunctionalTest {
         if (contains("\"id\": \"$id\"")) error("Expected manifest sources NOT to contain id='$id', but did:\n$this")
     }
 
-    private fun writeFixtureProject(projectDir: Path, repo: Path = defaultRepo(projectDir)) {
+    private fun writeFixtureProject(
+        projectDir: Path,
+        repo: Path = defaultRepo(projectDir),
+        kotlinVersion: String = "2.3.21",
+    ) {
         if (!Files.exists(repo.resolve("dev/kensa/kensa-core/0.8.0-SNAPSHOT/kensa-core-0.8.0-SNAPSHOT.jar"))) {
             publishFakeKensaCore(repo)
         }
@@ -183,7 +187,7 @@ class SiteModeFunctionalTest {
             """
             plugins {
                 id("dev.kensa.gradle-plugin")
-                id("org.jetbrains.kotlin.jvm") version "2.2.21"
+                id("org.jetbrains.kotlin.jvm") version "$kotlinVersion"
             }
 
             repositories {
