@@ -48,3 +48,8 @@ validate-gradle-plugin:
 		-PreleaseVersion="$${GIT_TAG_NAME}" \
 		-Pgradle.publish.key="$${GRADLE_PUBLISH_KEY}" \
 		-Pgradle.publish.secret="$${GRADLE_PUBLISH_SECRET}"
+
+.PHONY: publish-to-sonatype-snapshot
+publish-to-sonatype-snapshot:
+	./gradlew --build-cache --no-daemon publish -PreleaseVersion="$${RELEASE_VERSION}"
+	./gradlew --build-cache --no-daemon jreleaserDeploy -PreleaseVersion="$${RELEASE_VERSION}"

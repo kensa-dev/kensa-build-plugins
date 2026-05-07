@@ -1,13 +1,18 @@
 import org.gradle.api.JavaVersion.VERSION_17
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jreleaser.model.Active
 
 plugins {
     alias(libs.plugins.kotlinJvm) apply false
+    alias(libs.plugins.jreleaser)
+    `maven-publish`
+    base
 }
 
 group = "dev.kensa"
-version = project.properties["releaseVersion"] ?: "SNAPSHOT"
+version = project.properties["releaseVersion"]
+    ?: "${file("snapshot-version.txt").readText().trim()}-SNAPSHOT"
 
 subprojects {
     group = "dev.kensa"
@@ -16,6 +21,17 @@ subprojects {
     repositories {
         mavenLocal()
         mavenCentral()
+    }
+
+    plugins.withId("maven-publish") {
+        configure<PublishingExtension> {
+            repositories {
+                maven {
+                    name = "stagingDeploy"
+                    url = uri(rootProject.layout.buildDirectory.dir("staging-deploy").get().asFile.absolutePath)
+                }
+            }
+        }
     }
 
     var javaVersion = VERSION_17
@@ -46,6 +62,24 @@ subprojects {
 
         withType<Jar> {
             archiveBaseName.set("${rootProject.name}-${project.name}")
+        }
+    }
+}
+
+jreleaser {
+    gitRootSearch.set(true)
+    deploy {
+        maven {
+            nexus2.create("snapshots") {
+                active.set(Active.SNAPSHOT)
+                snapshotUrl.set("https://central.sonatype.com/repository/maven-snapshots/")
+                applyMavenCentralRules.set(true)
+                snapshotSupported.set(true)
+                sign.set(false)
+                closeRepository.set(true)
+                releaseRepository.set(true)
+                stagingRepositories.add(layout.buildDirectory.dir("staging-deploy").get().asFile.absolutePath)
+            }
         }
     }
 }
