@@ -1,0 +1,31 @@
+name: Nightly Snapshot
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+env:
+  JRELEASER_NEXUS2_SNAPSHOTS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+  JRELEASER_NEXUS2_SNAPSHOTS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+
+jobs:
+  PublishSnapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Read snapshot version
+        id: version
+        run: echo "snapshot=$(cat snapshot-version.txt)-SNAPSHOT" >> $GITHUB_OUTPUT
+      - name: Publish to Sonatype Snapshot
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.snapshot }}
+        run: make publish-to-sonatype-snapshot
