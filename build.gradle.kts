@@ -25,6 +25,30 @@ subprojects {
 
     plugins.withId("maven-publish") {
         configure<PublishingExtension> {
+            publications.withType<MavenPublication>().configureEach {
+                pom {
+                    name.set("${rootProject.name}-${project.name}")
+                    description.set(provider { project.description ?: "Kensa build plugins module: ${project.name}" })
+                    url.set("https://kensa.dev")
+                    licenses {
+                        license {
+                            name.set("Apache License, Version 2.0")
+                            url.set("http://www.apache.org/licenses/LICENSE-2.0.html")
+                        }
+                    }
+                    developers {
+                        developer {
+                            name.set("Paul Brooks")
+                            email.set("paul@kensa.dev")
+                        }
+                    }
+                    scm {
+                        connection.set("scm:git:git@github.com:kensa-dev/build-plugins.git")
+                        developerConnection.set("scm:git:git@github.com:kensa-dev/build-plugins.git")
+                        url.set("https://github.com/kensa-dev/build-plugins")
+                    }
+                }
+            }
             repositories {
                 maven {
                     name = "stagingDeploy"
@@ -43,6 +67,8 @@ subprojects {
         configure<JavaPluginExtension> {
             sourceCompatibility = javaVersion
             targetCompatibility = javaVersion
+            withSourcesJar()
+            withJavadocJar()
         }
     }
 
@@ -51,13 +77,6 @@ subprojects {
             compilerOptions {
                 jvmTarget.set(kotlinJvmTarget)
             }
-        }
-
-        register<Jar>("sourcesJar") {
-            group = "build"
-            archiveClassifier.set("sources")
-            from(project.the<SourceSetContainer>()["main"].allSource)
-            dependsOn(named("classes"))
         }
 
         withType<Jar> {

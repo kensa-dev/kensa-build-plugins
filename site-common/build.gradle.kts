@@ -3,6 +3,8 @@ plugins {
     `maven-publish`
 }
 
+description = "Kensa site-mode shared shell extraction utilities"
+
 dependencies {
     compileOnly("org.jetbrains.kotlin:kotlin-stdlib")
     testImplementation(libs.junit.jupiter)
@@ -18,7 +20,6 @@ publishing {
     publications {
         create<MavenPublication>("maven") {
             from(components["java"])
-            artifact(tasks.named("sourcesJar"))
         }
     }
 }

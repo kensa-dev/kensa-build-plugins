@@ -4,6 +4,8 @@ plugins {
     `maven-publish`
 }
 
+description = "Maven plugin for assembling Kensa multi-source site bundles"
+
 dependencies {
     implementation(project(":site-common"))
     implementation("org.jetbrains.kotlin:kotlin-stdlib")

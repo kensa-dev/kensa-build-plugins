@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.gradlePluginPublish)
 }
 
+description = "Gradle plugin for Kensa compiler plugin integration and site-mode wiring"
+
 // Version of kensa-core (and kensa-compiler-plugin) this plugin release targets. Lives in a
 // sibling file to version.txt so a release can bump both lines in one commit. Distinct from the
 // plugin's own version because build-plugins and kensa repo version independently.
