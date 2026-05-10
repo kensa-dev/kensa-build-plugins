@@ -77,12 +77,47 @@ gradlePlugin {
     }
 }
 
+val smokeTestRepoDir = layout.buildDirectory.dir("smoke-test-repo")
+
 publishing {
     publications.withType<MavenPublication>().configureEach {
         pom {
             url.set("https://kensa.dev/docs/build-plugins/gradle-plugin")
         }
     }
+    repositories {
+        maven {
+            name = "smokeTest"
+            url = uri(smokeTestRepoDir)
+        }
+    }
+}
+
+// Verifies the *published* plugin (POM + module metadata + jar) resolves cleanly from a
+// real Maven repo. Functional tests use withPluginClasspath() which injects the local
+// runtime classpath and hides missing transitive deps — so they passed despite the
+// site-common dep being unresolvable for real consumers (the clearwave-example failure).
+val smokeTest by sourceSets.creating
+val smokeTestTask = tasks.register<Test>("smokeTest") {
+    description = "Smoke-tests the published plugin from a local Maven repo (catches missing transitive deps)."
+    group = "verification"
+    testClassesDirs = smokeTest.output.classesDirs
+    classpath = smokeTest.runtimeClasspath
+    useJUnitPlatform()
+    dependsOn("publishAllPublicationsToSmokeTestRepository")
+    systemProperty("smoke.test.repo", smokeTestRepoDir.get().asFile.absolutePath)
+    systemProperty("smoke.test.plugin.version", project.version.toString())
+}
+
+dependencies {
+    "smokeTestImplementation"(libs.junit.jupiter)
+    "smokeTestImplementation"(libs.kotest.assertions.core)
+    "smokeTestImplementation"(gradleTestKit())
+    "smokeTestRuntimeOnly"(libs.junit.platform.launcher)
+}
+
+tasks.named("check") {
+    dependsOn(smokeTestTask)
 }
 
 tasks.withType<Test> {
