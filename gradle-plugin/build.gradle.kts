@@ -7,16 +7,21 @@ plugins {
 
 description = "Gradle plugin for Kensa compiler plugin integration and site-mode wiring"
 
-// Version of kensa-core (and kensa-compiler-plugin) this plugin release targets. Lives in a
-// sibling file to version.txt so a release can bump both lines in one commit. Distinct from the
-// plugin's own version because build-plugins and kensa repo version independently.
+// Default kensa-core (and kensa-compiler-plugin) coordinate this plugin pairs with — used as
+// the convention for `kensa.kensaCoreVersion` when the consumer doesn't override it.
+// Independent of `version.txt`: the plugin and kensa-core release on their own cadences.
 val kensaCoreVersion = rootProject.file("kensa-core-version.txt").readText().trim()
+
+// Lower bound for the kensa-core override. Versions below this are rejected at apply time
+// (the plugin can't guarantee runtime/compiler-plugin compatibility with older kensa-cores).
+val minKensaCoreVersion = rootProject.file("kensa-core-min-version.txt").readText().trim()
 
 buildConfig {
     packageName("dev.kensa.gradle")
     useKotlinOutput { topLevelConstants = true }
     buildConfigField("KENSA_VERSION", provider { "${project.version}" })
     buildConfigField("KENSA_CORE_VERSION", kensaCoreVersion)
+    buildConfigField("MIN_KENSA_CORE_VERSION", minKensaCoreVersion)
     buildConfigField("MIN_KOTLIN_VERSION", libs.versions.kotlin.get())
 }
 

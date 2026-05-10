@@ -1,6 +1,20 @@
 <h2 class="github">Changelog</h2>
 
-### v0.8.0
+### v0.9.0
+
+**Plugin versioning is now independent of kensa-core.** Previously the Gradle and Maven plugins were released in lockstep with kensa-core, sharing a version number. Plugin-only fixes no longer require a kensa-core release; kensa-core releases no longer require a plugin release.
+
+- New `kensa { kensaCoreVersion.set("X.Y.Z") }` extension property (Gradle) and `<kensaCoreVersion>` mojo parameter (Maven). Defaults to the version this plugin release was tested against (read from the bundled `kensa-core-version.txt`). Override to pin a different kensa-core within the supported range.
+- Apply-time minimum-version check: a `kensa-core` below `MIN_KENSA_CORE_VERSION` (currently 0.8.0) is rejected with an actionable error. No upper bound — newer kensa-cores are assumed compatible until proven otherwise.
+- Compatibility matrix lives in the plugin READMEs and at [kensa.dev](https://kensa.dev/docs/build-plugins). Same-version pairing (`plugin X.Y.Z` ↔ `kensa-core X.Y.Z`) is no longer implied; consult the matrix.
+- CI: a kensa release no longer auto-bumps `version.txt` or stages a draft plugin release. It only bumps `kensa-core-version.txt` (the default the plugin pairs with) and runs verification.
+
+Fixed:
+- **site-common is now bundled into both plugin jars.** v0.8.0 declared `dev.kensa:site-common` as a runtime POM dep but never published it, breaking real consumers. New publish smoke test in CI catches this class of bug before tagging.
+
+### v0.8.0 — withdrawn
+> Pulled from the Gradle Plugin Portal. The published POM declared `dev.kensa:site-common` as a runtime dep but that artifact was never published to a public repo, so the plugin failed to resolve for real consumers. Use v0.9.0 or later.
+
 New features:
   - **Site mode** — aggregate per-sourceset (Gradle) or per-execution (Maven) test bundles into a single multi-source HTML site.
     - **Gradle**: new `site` and `siteRoot` properties on the `kensa { }` extension; `assembleKensaSite` task auto-registered when `site = true`. Wires `kensa.output.root` and `kensa.source.id` system properties onto the configured `Test` tasks. [Docs](https://kensa.dev/docs/build-plugins/gradle-plugin).

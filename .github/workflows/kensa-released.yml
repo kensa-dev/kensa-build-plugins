@@ -1,9 +1,9 @@
 name: Kensa Released
 
 # Triggered by kensa-dev/kensa publish.yml after a successful Kensa release.
-# Pins this repo to the new Kensa version, verifies the build, and stages a draft GitHub
-# release. Publishing the draft (UI or `gh release edit --draft=false`) creates the tag,
-# which fires publish.yml and pushes the plugin to the Gradle Plugin Portal.
+# Bumps `kensa-core-version.txt` (the *default* kensa-core the plugin targets), verifies
+# the build still passes, and commits the bump. No plugin release is auto-staged — the
+# plugin versions independently. A maintainer decides if a plugin release is warranted.
 
 on:
   repository_dispatch:
@@ -14,10 +14,9 @@ permissions:
 
 env:
   KENSA_VERSION: ${{ github.event.client_payload.version }}
-  GIT_TAG_NAME: ${{ github.event.client_payload.version }}
 
 jobs:
-  prepare-draft-release:
+  verify-against-kensa:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -34,36 +33,20 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v6
 
-      - name: Pin to new Kensa version
-        run: |
-          echo "${KENSA_VERSION}" > kensa-core-version.txt
-          echo "${KENSA_VERSION}" > version.txt
+      - name: Pin default kensa-core to new release
+        run: echo "${KENSA_VERSION}" > kensa-core-version.txt
 
       - name: Verify build against new kensa-core
         run: ./gradlew check --no-daemon
 
-      - name: Commit version bumps
+      - name: Commit version bump
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-          git add kensa-core-version.txt version.txt
+          git add kensa-core-version.txt
           if git diff --cached --quiet; then
-            echo "No version changes to commit (already at ${KENSA_VERSION})."
+            echo "kensa-core-version.txt already at ${KENSA_VERSION}; nothing to commit."
           else
-            git commit -m "Bump to ${KENSA_VERSION} (kensa release)"
+            git commit -m "Bump default kensa-core to ${KENSA_VERSION}"
             git push origin HEAD:master
           fi
-
-      - name: Generate release notes
-        run: make create-release-note
-
-      - name: Create draft GitHub release
-        uses: softprops/action-gh-release@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          tag_name: ${{ env.KENSA_VERSION }}
-          name: ${{ env.KENSA_VERSION }}
-          body_path: RN.md
-          draft: true
-          prerelease: false
-          target_commitish: master

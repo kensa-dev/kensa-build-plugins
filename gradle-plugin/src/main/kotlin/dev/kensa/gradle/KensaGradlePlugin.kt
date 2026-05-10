@@ -12,7 +12,13 @@ import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 
 class KensaGradlePlugin : KotlinCompilerPluginSupportPlugin {
 
+    // Captured in `apply` so `getPluginArtifact` (called by the Kotlin Gradle plugin without
+    // a Project parameter) can read the per-project KensaExtension to honor an override.
+    private lateinit var capturedProject: Project
+
     override fun apply(target: Project) {
+        capturedProject = target
+
         target.plugins.withType(KotlinBasePlugin::class.java) { kotlinPlugin ->
             val applied = kotlinPlugin.pluginVersion
             if (GradleVersion.version(applied) < GradleVersion.version(MIN_KOTLIN_VERSION)) {
@@ -27,6 +33,7 @@ class KensaGradlePlugin : KotlinCompilerPluginSupportPlugin {
 
         target.afterEvaluate { project ->
             val extension = project.extensions.getByType(KensaExtension::class.java)
+            checkKensaCoreCompat(extension.kensaCoreVersion.get())
             if (!extension.enabled.get() || !extension.site.get()) return@afterEvaluate
 
             val siteRootDir = extension.siteRoot.get().asFile.absolutePath
@@ -65,14 +72,15 @@ class KensaGradlePlugin : KotlinCompilerPluginSupportPlugin {
                 isTransitive = false
                 description = "Source jars for the Kensa multi-source site shell (kensa.js, logo.svg)."
             }
-            project.dependencies.add(shellConfig.name, "dev.kensa:kensa-core:$KENSA_CORE_VERSION")
+            val resolvedKensaCoreVersion = extension.kensaCoreVersion.get()
+            project.dependencies.add(shellConfig.name, "dev.kensa:kensa-core:$resolvedKensaCoreVersion")
 
             project.tasks.register("assembleKensaSite", AssembleKensaSiteTask::class.java) { task ->
                 task.group = "verification"
                 task.description = "Assembles the Kensa multi-source site (shell + manifest) from per-sourceset bundles."
                 task.siteRoot.set(extension.siteRoot)
                 task.expectedSourceIds.set(expectedSourceIds)
-                task.kensaVersion.set(KENSA_CORE_VERSION)
+                task.kensaVersion.set(resolvedKensaCoreVersion)
                 task.shellSource.from(shellConfig)
                 task.sourceConfigurations.from(
                     project.fileTree(extension.siteRoot) {
@@ -106,7 +114,7 @@ class KensaGradlePlugin : KotlinCompilerPluginSupportPlugin {
     override fun getPluginArtifact(): SubpluginArtifact = SubpluginArtifact(
         groupId = "dev.kensa",
         artifactId = "kensa-compiler-plugin",
-        version = KENSA_CORE_VERSION
+        version = capturedProject.kensaExtension.kensaCoreVersion.get()
     )
 
     override fun applyToCompilation(kotlinCompilation: KotlinCompilation<*>): Provider<List<SubpluginOption>> {
@@ -114,8 +122,9 @@ class KensaGradlePlugin : KotlinCompilerPluginSupportPlugin {
         val extension = project.kensaExtension
 
         if (extension.enabled.get()) {
+            val resolvedKensaCoreVersion = extension.kensaCoreVersion.get()
             kotlinCompilation.defaultSourceSet.dependencies {
-                implementation("dev.kensa:kensa-core:$KENSA_CORE_VERSION") {
+                implementation("dev.kensa:kensa-core:$resolvedKensaCoreVersion") {
                     capabilities {
                         it.requireCapability("dev.kensa:core-hooks")
                     }
@@ -134,6 +143,16 @@ class KensaGradlePlugin : KotlinCompilerPluginSupportPlugin {
                 options.add(SubpluginOption("debug", "true"))
             }
             options
+        }
+    }
+
+    private fun checkKensaCoreCompat(requested: String) {
+        if (GradleVersion.version(requested) < GradleVersion.version(MIN_KENSA_CORE_VERSION)) {
+            throw GradleException(
+                "dev.kensa.gradle-plugin (this is plugin $KENSA_VERSION) requires kensa-core >= $MIN_KENSA_CORE_VERSION " +
+                        "but the project requested kensa-core $requested. " +
+                        "Update or remove the `kensa { kensaCoreVersion.set(...) }` override."
+            )
         }
     }
 

@@ -13,11 +13,20 @@ abstract class KensaExtension @Inject constructor(layout: ProjectLayout) {
     abstract val site: Property<Boolean>
     abstract val siteRoot: DirectoryProperty
 
+    /**
+     * Version of dev.kensa:kensa-core (and dev.kensa:kensa-compiler-plugin) to resolve at
+     * compile + task time. Defaults to the version this plugin release was tested against
+     * (`KENSA_CORE_VERSION`). Override to pin a different kensa-core within the supported
+     * range — see the compatibility matrix in the plugin README.
+     */
+    abstract val kensaCoreVersion: Property<String>
+
     init {
         enabled.convention(true)
         debug.convention(false)
         sourceSets.convention(setOf("test"))
         site.convention(false)
         siteRoot.convention(layout.buildDirectory.dir("kensa-site"))
+        kensaCoreVersion.convention(KENSA_CORE_VERSION)
     }
 }

@@ -59,19 +59,24 @@ tasks.named<org.gradlex.maven.plugin.development.task.GenerateMavenPluginDescrip
 // and extracts the shell from that jar. This decouples kensa-core releases from plugin
 // releases — updating the kensa UI no longer requires republishing the maven plugin.
 //
-// We DO bundle one tiny resource: kensa-core-version.txt, so the mojo has a sensible
-// default for <kensaCoreVersion> matching this plugin release. Users can override via
-// the mojo parameter if they want to pin to a different kensa-core.
+// We DO bundle two tiny resources: kensa-core-version.txt (the default the mojo uses for
+// <kensaCoreVersion> when unset) and kensa-core-min-version.txt (the lower bound the mojo
+// rejects overrides below at apply time). Users can override <kensaCoreVersion> on the
+// mojo to pin a different kensa-core, within the supported range.
 val kensaCoreVersion = rootProject.file("kensa-core-version.txt").readText().trim()
+val minKensaCoreVersion = rootProject.file("kensa-core-min-version.txt").readText().trim()
 
 val writeKensaCoreVersionResource = tasks.register("writeKensaCoreVersionResource") {
     val outputDir = layout.buildDirectory.dir("generated/resources/main")
     inputs.property("kensaCoreVersion", kensaCoreVersion)
+    inputs.property("minKensaCoreVersion", minKensaCoreVersion)
     outputs.dir(outputDir)
     doLast {
-        val file = outputDir.get().file("META-INF/dev/kensa/kensa-core-version.txt").asFile
-        file.parentFile.mkdirs()
-        file.writeText(kensaCoreVersion)
+        val versionFile = outputDir.get().file("META-INF/dev/kensa/kensa-core-version.txt").asFile
+        versionFile.parentFile.mkdirs()
+        versionFile.writeText(kensaCoreVersion)
+        outputDir.get().file("META-INF/dev/kensa/kensa-core-min-version.txt").asFile
+            .writeText(minKensaCoreVersion)
     }
 }
 

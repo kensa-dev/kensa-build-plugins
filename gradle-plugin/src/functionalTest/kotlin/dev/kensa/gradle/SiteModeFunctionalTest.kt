@@ -147,6 +147,25 @@ class SiteModeFunctionalTest {
     }
 
     @Test
+    fun `kensa kensaCoreVersion override resolves a different kensa-core than the plugin default`(@TempDir projectDir: Path) {
+        // Distinct from the default; deliberately above the min compat bound (0.8.0).
+        val overrideVersion = "0.8.99"
+        val repo = projectDir.resolve("test-repo")
+        // Publish ONLY the override version. The default isn't in the repo, so a build that
+        // ignored the override would fail to resolve. Distinct bytes prove which version
+        // the plugin actually pulled the shell from.
+        publishFakeKensaCore(repo, kensaJsBytes = "// override\n".toByteArray(), version = overrideVersion)
+        writeFixtureProject(projectDir, repo, kensaCoreVersionOverride = overrideVersion)
+        prePopulateSource(projectDir, "uiTest", titleText = "UI Tests")
+        prePopulateSource(projectDir, "test", titleText = "Acceptance Tests")
+
+        val result = runner(projectDir).build()
+
+        result.task(":assembleKensaSite")?.outcome shouldBe TaskOutcome.SUCCESS
+        Files.readString(projectDir.resolve("build/kensa-site/kensa.js")) shouldBe "// override\n"
+    }
+
+    @Test
     fun `republishing kensa-core with a new shell invalidates the cache and updates kensa_js without a plugin republish`(@TempDir projectDir: Path) {
         val repo = projectDir.resolve("test-repo")
         publishFakeKensaCore(repo, kensaJsBytes = "// shell v1\n".toByteArray())
@@ -179,15 +198,20 @@ class SiteModeFunctionalTest {
         projectDir: Path,
         repo: Path = defaultRepo(projectDir),
         kotlinVersion: String = "2.3.21",
+        kensaCoreVersionOverride: String? = null,
     ) {
-        if (!Files.exists(repo.resolve("dev/kensa/kensa-core/$kensaCoreVersion/kensa-core-$kensaCoreVersion.jar"))) {
-            publishFakeKensaCore(repo)
+        val resolvedVersion = kensaCoreVersionOverride ?: kensaCoreVersion
+        if (!Files.exists(repo.resolve("dev/kensa/kensa-core/$resolvedVersion/kensa-core-$resolvedVersion.jar"))) {
+            publishFakeKensaCore(repo, version = resolvedVersion)
         }
         projectDir.resolve("settings.gradle.kts").toFile().writeText(
             """
             rootProject.name = "fixture"
             """.trimIndent()
         )
+        val overrideBlock = kensaCoreVersionOverride?.let {
+            "kensaCoreVersion.set(\"$it\")"
+        } ?: ""
         projectDir.resolve("build.gradle.kts").toFile().writeText(
             """
             plugins {
@@ -202,6 +226,7 @@ class SiteModeFunctionalTest {
             kensa {
                 site = true
                 sourceSets = setOf("uiTest", "test")
+                $overrideBlock
             }
 
             tasks.register<Test>("uiTest") {
@@ -228,7 +253,7 @@ class SiteModeFunctionalTest {
     }
 
     /**
-     * Publishes a synthetic `dev.kensa:kensa-core:0.8.0` artifact into [repoRoot]
+     * Publishes a synthetic `dev.kensa:kensa-core:[version]` artifact into [repoRoot]
      * (Maven layout). The jar contains only `kensa.js` and `logo.svg` — sufficient for the
      * site-assembly task. Calling this twice with different bytes simulates a kensa UI
      * update being republished to maven local.
@@ -237,11 +262,12 @@ class SiteModeFunctionalTest {
         repoRoot: Path,
         kensaJsBytes: ByteArray = "// shell\n".toByteArray(),
         logoSvgBytes: ByteArray = "<svg/>".toByteArray(),
+        version: String = kensaCoreVersion,
     ) {
-        val artifactDir = repoRoot.resolve("dev/kensa/kensa-core/$kensaCoreVersion")
+        val artifactDir = repoRoot.resolve("dev/kensa/kensa-core/$version")
         Files.createDirectories(artifactDir)
 
-        val jarPath = artifactDir.resolve("kensa-core-$kensaCoreVersion.jar")
+        val jarPath = artifactDir.resolve("kensa-core-$version.jar")
         JarOutputStream(Files.newOutputStream(jarPath)).use { jos ->
             jos.putNextEntry(JarEntry("kensa.js"))
             jos.write(kensaJsBytes)
@@ -252,14 +278,14 @@ class SiteModeFunctionalTest {
         }
 
         Files.writeString(
-            artifactDir.resolve("kensa-core-$kensaCoreVersion.pom"),
+            artifactDir.resolve("kensa-core-$version.pom"),
             """
             <?xml version="1.0" encoding="UTF-8"?>
             <project xmlns="http://maven.apache.org/POM/4.0.0">
               <modelVersion>4.0.0</modelVersion>
               <groupId>dev.kensa</groupId>
               <artifactId>kensa-core</artifactId>
-              <version>$kensaCoreVersion</version>
+              <version>$version</version>
               <packaging>jar</packaging>
             </project>
             """.trimIndent()
