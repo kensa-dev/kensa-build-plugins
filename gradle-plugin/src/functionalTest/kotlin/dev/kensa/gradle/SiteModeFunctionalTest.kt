@@ -13,6 +13,11 @@ import java.util.jar.JarOutputStream
 
 class SiteModeFunctionalTest {
 
+    // Injected by the functionalTest gradle task from kensa-core-version.txt — same source the plugin reads.
+    private val kensaCoreVersion: String = System.getProperty("kensa.core.version")
+        ?: error("System property 'kensa.core.version' not set; configure it on the functionalTest task.")
+
+
     @Test
     fun `assembleKensaSite produces shell artifacts and a manifest aggregating all present sourcesets`(@TempDir projectDir: Path) {
         writeFixtureProject(projectDir)
@@ -175,7 +180,7 @@ class SiteModeFunctionalTest {
         repo: Path = defaultRepo(projectDir),
         kotlinVersion: String = "2.3.21",
     ) {
-        if (!Files.exists(repo.resolve("dev/kensa/kensa-core/0.8.0-SNAPSHOT/kensa-core-0.8.0-SNAPSHOT.jar"))) {
+        if (!Files.exists(repo.resolve("dev/kensa/kensa-core/$kensaCoreVersion/kensa-core-$kensaCoreVersion.jar"))) {
             publishFakeKensaCore(repo)
         }
         projectDir.resolve("settings.gradle.kts").toFile().writeText(
@@ -213,7 +218,7 @@ class SiteModeFunctionalTest {
         Files.createDirectories(dir)
         Files.writeString(
             dir.resolve("configuration.json"),
-            """{"titleText":"$titleText","kensaVersion":"0.8.0-SNAPSHOT"}"""
+            """{"titleText":"$titleText","kensaVersion":"$kensaCoreVersion"}"""
         )
         Files.writeString(
             dir.resolve("indices.json"),
@@ -223,7 +228,7 @@ class SiteModeFunctionalTest {
     }
 
     /**
-     * Publishes a synthetic `dev.kensa:kensa-core:0.8.0-SNAPSHOT` artifact into [repoRoot]
+     * Publishes a synthetic `dev.kensa:kensa-core:0.8.0` artifact into [repoRoot]
      * (Maven layout). The jar contains only `kensa.js` and `logo.svg` — sufficient for the
      * site-assembly task. Calling this twice with different bytes simulates a kensa UI
      * update being republished to maven local.
@@ -233,10 +238,10 @@ class SiteModeFunctionalTest {
         kensaJsBytes: ByteArray = "// shell\n".toByteArray(),
         logoSvgBytes: ByteArray = "<svg/>".toByteArray(),
     ) {
-        val artifactDir = repoRoot.resolve("dev/kensa/kensa-core/0.8.0-SNAPSHOT")
+        val artifactDir = repoRoot.resolve("dev/kensa/kensa-core/$kensaCoreVersion")
         Files.createDirectories(artifactDir)
 
-        val jarPath = artifactDir.resolve("kensa-core-0.8.0-SNAPSHOT.jar")
+        val jarPath = artifactDir.resolve("kensa-core-$kensaCoreVersion.jar")
         JarOutputStream(Files.newOutputStream(jarPath)).use { jos ->
             jos.putNextEntry(JarEntry("kensa.js"))
             jos.write(kensaJsBytes)
@@ -247,36 +252,16 @@ class SiteModeFunctionalTest {
         }
 
         Files.writeString(
-            artifactDir.resolve("kensa-core-0.8.0-SNAPSHOT.pom"),
+            artifactDir.resolve("kensa-core-$kensaCoreVersion.pom"),
             """
             <?xml version="1.0" encoding="UTF-8"?>
             <project xmlns="http://maven.apache.org/POM/4.0.0">
               <modelVersion>4.0.0</modelVersion>
               <groupId>dev.kensa</groupId>
               <artifactId>kensa-core</artifactId>
-              <version>0.8.0-SNAPSHOT</version>
+              <version>$kensaCoreVersion</version>
               <packaging>jar</packaging>
             </project>
-            """.trimIndent()
-        )
-
-        // Tells Gradle this is a non-unique snapshot (artifact filename is the *-SNAPSHOT.jar literal,
-        // not a timestamped variant). Lets the resolver pick up replaced bytes without timestamp games.
-        Files.writeString(
-            artifactDir.resolve("maven-metadata.xml"),
-            """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <metadata modelVersion="1.1.0">
-              <groupId>dev.kensa</groupId>
-              <artifactId>kensa-core</artifactId>
-              <version>0.8.0-SNAPSHOT</version>
-              <versioning>
-                <snapshot>
-                  <localCopy>true</localCopy>
-                </snapshot>
-                <lastUpdated>${System.currentTimeMillis() / 1000}</lastUpdated>
-              </versioning>
-            </metadata>
             """.trimIndent()
         )
     }

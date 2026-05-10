@@ -39,6 +39,6 @@ Build as normal; the plugin attaches to the selected compilations.
 User documentation lives at **[kensa.dev](https://kensa.dev/docs/intro)**.
 
 Plugin-specific guides:
-- **[Gradle plugin — site mode](https://kensa.dev/docs/site-mode/gradle)**
-- **[Maven plugin — site mode](https://kensa.dev/docs/site-mode/maven)**
-- **[Publishing in CI](https://kensa.dev/docs/site-mode/ci)**
+- **[Gradle plugin](https://kensa.dev/docs/build-plugins/gradle-plugin)**
+- **[Maven plugin](https://kensa.dev/docs/build-plugins/maven-plugin)**
+- **[Site mode](https://kensa.dev/docs/build-plugins/site-mode)** — multi-source aggregated reports, including [CI / hosted use](https://kensa.dev/docs/build-plugins/site-mode#ci--hosted-use)

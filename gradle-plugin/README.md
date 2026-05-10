@@ -5,7 +5,8 @@ Gradle plugin for the Kensa BDD testing framework — wires the Kotlin compiler 
 ## Documentation
 
 - **[Quickstart](https://kensa.dev/docs/intro)**
-- **[Site mode (gradle setup)](https://kensa.dev/docs/site-mode/gradle)** — multi-sourceset aggregated reports
+- **[Gradle plugin reference](https://kensa.dev/docs/build-plugins/gradle-plugin)**
+- **[Site mode](https://kensa.dev/docs/build-plugins/site-mode)** — multi-sourceset aggregated reports
 - **[Configuration reference](https://kensa.dev/docs/api/configuration)**
 
 ## Coordinates

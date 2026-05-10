@@ -40,6 +40,9 @@ val functionalTestTask = tasks.register<Test>("functionalTest") {
     testClassesDirs = functionalTest.output.classesDirs
     classpath = functionalTest.runtimeClasspath
     useJUnitPlatform()
+    // Single source of truth: tests publish their fake kensa-core at the same coordinates
+    // the plugin will resolve, so a bump to kensa-core-version.txt only changes one file.
+    systemProperty("kensa.core.version", kensaCoreVersion)
 }
 
 dependencies {
@@ -62,7 +65,7 @@ gradlePlugin {
             implementationClass = "dev.kensa.gradle.KensaGradlePlugin"
             displayName = "Kensa Gradle Plugin"
             description = "Gradle plugin for Kensa compiler plugin integration"
-            website.set("https://kensa.dev/docs/site-mode/gradle")
+            website.set("https://kensa.dev/docs/build-plugins/gradle-plugin")
             vcsUrl.set("https://github.com/kensa-dev/build-plugins")
             tags.set(listOf("kotlin", "compiler-plugin", "testing", "kensa"))
         }
@@ -72,7 +75,7 @@ gradlePlugin {
 publishing {
     publications.withType<MavenPublication>().configureEach {
         pom {
-            url.set("https://kensa.dev/docs/site-mode/gradle")
+            url.set("https://kensa.dev/docs/build-plugins/gradle-plugin")
         }
     }
 }

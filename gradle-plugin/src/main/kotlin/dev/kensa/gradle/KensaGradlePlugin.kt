@@ -114,7 +114,7 @@ class KensaGradlePlugin : KotlinCompilerPluginSupportPlugin {
         val extension = project.kensaExtension
 
         if (extension.enabled.get()) {
-            kotlinCompilation.dependencies {
+            kotlinCompilation.defaultSourceSet.dependencies {
                 implementation("dev.kensa:kensa-core:$KENSA_CORE_VERSION") {
                     capabilities {
                         it.requireCapability("dev.kensa:core-hooks")

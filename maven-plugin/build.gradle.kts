@@ -75,7 +75,7 @@ publishing {
     }
     publications.withType<MavenPublication>().configureEach {
         pom {
-            url.set("https://kensa.dev/docs/site-mode/maven")
+            url.set("https://kensa.dev/docs/build-plugins/maven-plugin")
         }
     }
 }

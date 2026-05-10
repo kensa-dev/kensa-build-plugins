@@ -5,7 +5,8 @@ Maven plugin for the Kensa BDD testing framework — assembles multiple test exe
 ## Documentation
 
 - **[Quickstart](https://kensa.dev/docs/intro)**
-- **[Site mode (maven setup)](https://kensa.dev/docs/site-mode/maven)** — multi-execution aggregated reports
+- **[Maven plugin reference](https://kensa.dev/docs/build-plugins/maven-plugin)**
+- **[Site mode](https://kensa.dev/docs/build-plugins/site-mode)** — multi-execution aggregated reports
 - **[Configuration reference](https://kensa.dev/docs/api/configuration)**
 
 ## Coordinates
