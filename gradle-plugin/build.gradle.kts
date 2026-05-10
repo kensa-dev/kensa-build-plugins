@@ -21,11 +21,15 @@ buildConfig {
 }
 
 dependencies {
-    implementation(project(":site-common"))
+    // site-common's classes are bundled into the plugin jar (see jar task below) — declared
+    // compileOnly so it does NOT appear as a runtime dep in the published POM. Consumers
+    // of the plugin only see one artifact and don't need site-common to be on Central.
+    compileOnly(project(":site-common"))
     implementation("org.jetbrains.kotlin:kotlin-gradle-plugin-api")
     compileOnly("org.jetbrains.kotlin:kotlin-compiler-embeddable")
     compileOnly(gradleApi())
 
+    testImplementation(project(":site-common"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.kotest.assertions.core)
     testImplementation(gradleApi())
@@ -46,6 +50,7 @@ val functionalTestTask = tasks.register<Test>("functionalTest") {
 }
 
 dependencies {
+    "functionalTestImplementation"(project(":site-common"))
     "functionalTestImplementation"(libs.junit.jupiter)
     "functionalTestImplementation"(libs.kotest.assertions.core)
     "functionalTestImplementation"(gradleApi())
@@ -88,6 +93,23 @@ kotlin {
     compilerOptions {
         freeCompilerArgs.add("-opt-in=org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi")
     }
+}
+
+// site-common is bundled into the plugin jar (declared compileOnly) so the plugin ships
+// as a single self-contained artifact — no need to publish site-common to a public repo.
+val siteCommonMain = project(":site-common").extensions
+    .getByType<JavaPluginExtension>().sourceSets.named("main")
+
+tasks.named<Jar>("jar") {
+    from(siteCommonMain.map { it.output })
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+// `withPluginClasspath()` reads the plugin classpath from pluginUnderTestMetadata, which
+// derives from main's runtimeClasspath. Since site-common is compileOnly here, add its
+// classes explicitly so functional tests see the same classpath as a real plugin install.
+tasks.named<org.gradle.plugin.devel.tasks.PluginUnderTestMetadata>("pluginUnderTestMetadata") {
+    pluginClasspath.from(siteCommonMain.map { it.output })
 }
 
 // Shell resources (kensa.js, logo.svg) are NOT bundled into the plugin jar.

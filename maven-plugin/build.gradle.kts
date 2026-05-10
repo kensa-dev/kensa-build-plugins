@@ -7,12 +7,15 @@ plugins {
 description = "Maven plugin for assembling Kensa multi-source site bundles"
 
 dependencies {
-    implementation(project(":site-common"))
+    // site-common's classes are bundled into the plugin jar (see jar task below) — declared
+    // compileOnly so it does NOT appear as a runtime dep in the published POM.
+    compileOnly(project(":site-common"))
     implementation("org.jetbrains.kotlin:kotlin-stdlib")
     compileOnly(libs.maven.plugin.api)
     compileOnly(libs.maven.core)
     compileOnly(libs.maven.plugin.annotations)
 
+    testImplementation(project(":site-common"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.kotest.assertions.core)
     testImplementation(libs.maven.invoker)
@@ -27,6 +30,16 @@ mavenPlugin {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+// site-common is bundled into the plugin jar (declared compileOnly) so the plugin ships
+// as a single self-contained artifact — no need to publish site-common to a public repo.
+val siteCommonMain = project(":site-common").extensions
+    .getByType<JavaPluginExtension>().sourceSets.named("main")
+
+tasks.named<Jar>("jar") {
+    from(siteCommonMain.map { it.output })
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 // The gradlex maven-plugin-development plugin only adds the Java classes dir to the
@@ -98,7 +111,7 @@ val mavenHome: String = run {
 
 tasks.named<Test>("test") {
     dependsOn("publishToMavenLocal")
-    dependsOn(":site-common:publishToMavenLocal")
+    // site-common is bundled into the plugin jar — no separate maven-local publish needed.
     systemProperty("plugin.version", project.version.toString())
     systemProperty("kensa.core.version", kensaCoreVersion)
     systemProperty("maven.home", mavenHome)
