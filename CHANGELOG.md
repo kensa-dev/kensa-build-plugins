@@ -1,5 +1,26 @@
 <h2 class="github">Changelog</h2>
 
+### v0.9.1
+
+**Site-mode ergonomics.** Four changes that make `gradle test` / `mvn verify` produce an up-to-date aggregated report without re-running tests, and move per-source titles off system properties.
+
+New / changed:
+- **`gradle test` auto-builds the site.** Each configured Test task is now `finalizedBy(assembleKensaSite)` — running any of them automatically refreshes the aggregated site as a finalizer. Finalizer runs once after all participating Test tasks complete, regardless of pass/fail (a partial site is helpful when triaging failures). Maven side already does this via `post-integration-test` lifecycle binding.
+- **`gradle assembleKensaSite` no longer re-runs tests.** Switched from `dependsOn` to `mustRunAfter` — standalone invocation aggregates whatever bundles are on disk and emits the existing "expected but not present" warning for missing sources. Order is still enforced if you invoke both explicitly.
+- **`kensa { sourceTitles["id"] = title }` (Gradle) / `<sourceTitles>` (Maven) for per-source labels.** Build-declared titles overwrite the per-source `configuration.json` so the standalone HTML `<title>` matches the manifest sidebar label. Replaces the previous `tasks.named<Test>("...") { systemProperty("kensa.source.title", ...) }` pattern. The Gradle DSL also accepts `sourceTitles = mapOf("id" to title, …)` and `sourceTitles.put("id", title)` for bulk-set / explicit-method styles.
+
+Precedence when multiple paths set a source's title:
+1. Build DSL — `kensa { sourceTitles.put(id, ...) }` / `<sourceTitles>`
+2. Code via `Kensa.konfigure { titleText = ... }` (e.g. a per-sourceset base class — works in site mode because each Gradle Test task forks its own JVM)
+3. `kensa.source.title` system property (legacy; soft-deprecated)
+4. Default `"Index"` / source id fallback
+
+Internal:
+- **Test task input hygiene.** The plugin now passes `kensa.output.root` / `kensa.source.id` via `CommandLineArgumentProvider` with `@OutputDirectory` on the per-source bundle dir and `@Internal` on the site root path. The per-source bundle dir is a tracked Test output, so UP-TO-DATE checks become accurate. Absolute paths no longer enter the Test task cache key — friendly to shared / remote Gradle build caches.
+
+Migration:
+- Drop `systemProperty("kensa.source.title", ...)` calls from your `Test` task wiring in favour of `kensa { sourceTitles.put(id, "...") }`. Code-side `Kensa.konfigure { titleText = ... }` users keep working unchanged.
+
 ### v0.9.0
 
 **Plugin versioning is now independent of kensa-core.** Previously the Gradle and Maven plugins were released in lockstep with kensa-core, sharing a version number. Plugin-only fixes no longer require a kensa-core release; kensa-core releases no longer require a plugin release.
