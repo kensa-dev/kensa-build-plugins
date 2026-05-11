@@ -36,9 +36,9 @@ class KensaGradlePlugin : KotlinCompilerPluginSupportPlugin {
             checkKensaCoreCompat(extension.kensaCoreVersion.get())
             if (!extension.enabled.get() || !extension.site.get()) return@afterEvaluate
 
-            val siteRootDir = extension.siteRoot.get().asFile.absolutePath
             val expectedSourceIds = extension.sourceSets.get().toMutableSet()
             val seenIds = mutableSetOf<String>()
+            val configuredTestTasks = mutableListOf<org.gradle.api.tasks.testing.Test>()
 
             for (sourceSetName in extension.sourceSets.get()) {
                 val testTask = project.tasks.findByName(sourceSetName)
@@ -56,10 +56,14 @@ class KensaGradlePlugin : KotlinCompilerPluginSupportPlugin {
                     expectedSourceIds.add(existingId)
                 }
 
-                testTask.systemProperty("kensa.output.root", siteRootDir)
-                if (existingId == null) {
-                    testTask.systemProperty("kensa.source.id", sourceSetName)
+                val argsProvider = project.objects.newInstance(KensaSourceArgsProvider::class.java).apply {
+                    siteRoot.set(extension.siteRoot)
+                    sourceBundleDir.set(extension.siteRoot.dir("sources/$resolvedId"))
+                    sourceId.set(resolvedId)
+                    emitSourceIdArg.set(existingId == null)
                 }
+                testTask.jvmArgumentProviders.add(argsProvider)
+                configuredTestTasks.add(testTask)
             }
 
             // Resolved at task-execution time, NOT at plugin-build time. The shell resources (kensa.js,
@@ -75,12 +79,16 @@ class KensaGradlePlugin : KotlinCompilerPluginSupportPlugin {
             val resolvedKensaCoreVersion = extension.kensaCoreVersion.get()
             project.dependencies.add(shellConfig.name, "dev.kensa:kensa-core:$resolvedKensaCoreVersion")
 
-            project.tasks.register("assembleKensaSite", AssembleKensaSiteTask::class.java) { task ->
+            val assembleTaskProvider = project.tasks.register(
+                "assembleKensaSite",
+                AssembleKensaSiteTask::class.java,
+            ) { task ->
                 task.group = "verification"
                 task.description = "Assembles the Kensa multi-source site (shell + manifest) from per-sourceset bundles."
                 task.siteRoot.set(extension.siteRoot)
                 task.expectedSourceIds.set(expectedSourceIds)
                 task.kensaVersion.set(resolvedKensaCoreVersion)
+                task.sourceTitles.set(extension.sourceTitles)
                 task.shellSource.from(shellConfig)
                 task.sourceConfigurations.from(
                     project.fileTree(extension.siteRoot) {
@@ -91,9 +99,16 @@ class KensaGradlePlugin : KotlinCompilerPluginSupportPlugin {
                 task.indexHtmlFile.set(extension.siteRoot.file("index.html"))
                 task.kensaJsFile.set(extension.siteRoot.file("kensa.js"))
                 task.logoSvgFile.set(extension.siteRoot.file("logo.svg"))
-                for (sourceSetName in extension.sourceSets.get()) {
-                    project.tasks.findByName(sourceSetName)?.let { task.dependsOn(it) }
-                }
+                // mustRunAfter (not dependsOn): standalone `gradle assembleKensaSite` aggregates from
+                // disk without forcing Test tasks to re-run. Order is still enforced if both are invoked.
+                task.mustRunAfter(configuredTestTasks)
+            }
+
+            // Auto-wire: `gradle test` (or any configured Test task) triggers the assemble as a
+            // finalizer, so users don't have to remember `gradle test assembleKensaSite`. Finalizer
+            // runs once after all configured Test tasks complete, regardless of pass/fail.
+            for (testTask in configuredTestTasks) {
+                testTask.finalizedBy(assembleTaskProvider)
             }
         }
     }

@@ -166,6 +166,76 @@ class SiteModeFunctionalTest {
     }
 
     @Test
+    fun `assembleKensaSite standalone does not trigger configured Test tasks (mustRunAfter, not dependsOn)`(@TempDir projectDir: Path) {
+        writeFixtureProject(projectDir)
+        prePopulateSource(projectDir, "uiTest", titleText = "UI Tests")
+        prePopulateSource(projectDir, "test", titleText = "Acceptance Tests")
+
+        val result = runner(projectDir).build()
+
+        result.task(":assembleKensaSite")?.outcome shouldBe TaskOutcome.SUCCESS
+        // Neither configured Test task should appear in the executed graph.
+        result.task(":uiTest") shouldBe null
+        result.task(":test") shouldBe null
+    }
+
+    @Test
+    fun `running a configured Test task auto-fires assembleKensaSite as a finalizer`(@TempDir projectDir: Path) {
+        writeFixtureProject(projectDir)
+        prePopulateSource(projectDir, "uiTest", titleText = "UI Tests")
+        prePopulateSource(projectDir, "test", titleText = "Acceptance Tests")
+
+        val result = runner(projectDir, "uiTest").build()
+
+        result.task(":uiTest")?.outcome shouldBe TaskOutcome.NO_SOURCE
+        result.task(":assembleKensaSite")?.outcome shouldBe TaskOutcome.SUCCESS
+    }
+
+    @Test
+    fun `kensa sourceTitles build DSL overrides per-source titleText in manifest and configuration json`(@TempDir projectDir: Path) {
+        writeFixtureProject(
+            projectDir,
+            sourceTitles = mapOf("uiTest" to "Build-declared UI Tests"),
+        )
+        prePopulateSource(projectDir, "uiTest", titleText = "Code-side Title")
+        prePopulateSource(projectDir, "test", titleText = "Acceptance Tests")
+
+        runner(projectDir).build()
+
+        val manifestText = projectDir.resolve("build/kensa-site/manifest.json").toFile().readText()
+        manifestText shouldContain "\"id\": \"uiTest\""
+        manifestText shouldContain "\"title\": \"Build-declared UI Tests\""
+        // The unmapped source keeps its code-declared title.
+        manifestText shouldContain "\"title\": \"Acceptance Tests\""
+
+        val uiConfig = projectDir.resolve("build/kensa-site/sources/uiTest/configuration.json").toFile().readText()
+        uiConfig shouldContain "\"titleText\": \"Build-declared UI Tests\""
+        val acceptanceConfig = projectDir.resolve("build/kensa-site/sources/test/configuration.json").toFile().readText()
+        acceptanceConfig shouldContain "\"titleText\":\"Acceptance Tests\""
+    }
+
+    @Test
+    fun `titles already in configuration json pass through to manifest when sourceTitles map is empty`(@TempDir projectDir: Path) {
+        // Regression guard against the build-DSL plumbing accidentally swallowing per-source
+        // titleText values that the test runtime wrote. Whatever ResultWriter (or a user's
+        // `Kensa.konfigure { titleText = ... }`) put in configuration.json must survive aggregation
+        // untouched when there's no build entry to override it.
+        writeFixtureProject(projectDir)
+        prePopulateSource(projectDir, "uiTest", titleText = "Pre-existing UI label")
+        prePopulateSource(projectDir, "test", titleText = "Pre-existing Acceptance label")
+
+        runner(projectDir).build()
+
+        val manifestText = projectDir.resolve("build/kensa-site/manifest.json").toFile().readText()
+        manifestText shouldContain "\"title\": \"Pre-existing UI label\""
+        manifestText shouldContain "\"title\": \"Pre-existing Acceptance label\""
+
+        // configuration.json files should be byte-identical to what was pre-populated.
+        projectDir.resolve("build/kensa-site/sources/uiTest/configuration.json").toFile().readText() shouldContain "\"titleText\":\"Pre-existing UI label\""
+        projectDir.resolve("build/kensa-site/sources/test/configuration.json").toFile().readText() shouldContain "\"titleText\":\"Pre-existing Acceptance label\""
+    }
+
+    @Test
     fun `republishing kensa-core with a new shell invalidates the cache and updates kensa_js without a plugin republish`(@TempDir projectDir: Path) {
         val repo = projectDir.resolve("test-repo")
         publishFakeKensaCore(repo, kensaJsBytes = "// shell v1\n".toByteArray())
@@ -184,11 +254,13 @@ class SiteModeFunctionalTest {
         Files.readString(projectDir.resolve("build/kensa-site/kensa.js")) shouldBe "// shell v2\n"
     }
 
-    private fun runner(projectDir: Path): GradleRunner =
-        GradleRunner.create()
+    private fun runner(projectDir: Path, vararg args: String): GradleRunner {
+        val taskArgs = if (args.isEmpty()) listOf("assembleKensaSite") else args.toList()
+        return GradleRunner.create()
             .withProjectDir(projectDir.toFile())
-            .withArguments("assembleKensaSite", "--refresh-dependencies", "--stacktrace")
+            .withArguments(taskArgs + listOf("--refresh-dependencies", "--stacktrace"))
             .withPluginClasspath()
+    }
 
     private fun String.shouldNotContainSourceId(id: String) {
         if (contains("\"id\": \"$id\"")) error("Expected manifest sources NOT to contain id='$id', but did:\n$this")
@@ -199,6 +271,7 @@ class SiteModeFunctionalTest {
         repo: Path = defaultRepo(projectDir),
         kotlinVersion: String = "2.3.21",
         kensaCoreVersionOverride: String? = null,
+        sourceTitles: Map<String, String> = emptyMap(),
     ) {
         val resolvedVersion = kensaCoreVersionOverride ?: kensaCoreVersion
         if (!Files.exists(repo.resolve("dev/kensa/kensa-core/$resolvedVersion/kensa-core-$resolvedVersion.jar"))) {
@@ -212,6 +285,10 @@ class SiteModeFunctionalTest {
         val overrideBlock = kensaCoreVersionOverride?.let {
             "kensaCoreVersion.set(\"$it\")"
         } ?: ""
+        val sourceTitlesBlock = if (sourceTitles.isEmpty()) "" else sourceTitles.entries
+            .joinToString(separator = "\n                ") { (id, title) ->
+                "sourceTitles[\"$id\"] = \"$title\""
+            }
         projectDir.resolve("build.gradle.kts").toFile().writeText(
             """
             plugins {
@@ -227,6 +304,7 @@ class SiteModeFunctionalTest {
                 site = true
                 sourceSets = setOf("uiTest", "test")
                 $overrideBlock
+                $sourceTitlesBlock
             }
 
             tasks.register<Test>("uiTest") {

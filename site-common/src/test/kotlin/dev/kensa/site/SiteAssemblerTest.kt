@@ -104,6 +104,58 @@ class SiteAssemblerTest {
         tempDir.resolve("manifest.json").toFile().readText() shouldContain "\"title\": \"uiTest\""
     }
 
+    @Test
+    fun `sourceTitles override wins over configuration json titleText and rewrites the file`(@TempDir tempDir: Path) {
+        prePopulate(tempDir, "uiTest", "Code-side Title")
+        val log = CapturingLogger()
+
+        SiteAssembler(
+            siteRoot = tempDir,
+            expectedSourceIds = setOf("uiTest"),
+            kensaVersion = "0.8.0",
+            logger = log,
+            sourceTitles = mapOf("uiTest" to "Build-declared Title"),
+        ).assembleManifest()
+
+        tempDir.resolve("manifest.json").toFile().readText() shouldContain "\"title\": \"Build-declared Title\""
+        tempDir.resolve("sources/uiTest/configuration.json").toFile().readText() shouldContain "\"titleText\": \"Build-declared Title\""
+    }
+
+    @Test
+    fun `sourceTitles without an entry leaves the configuration json untouched`(@TempDir tempDir: Path) {
+        prePopulate(tempDir, "uiTest", "Code-side Title")
+        val original = tempDir.resolve("sources/uiTest/configuration.json").toFile().readText()
+        val log = CapturingLogger()
+
+        SiteAssembler(
+            siteRoot = tempDir,
+            expectedSourceIds = setOf("uiTest"),
+            kensaVersion = "0.8.0",
+            logger = log,
+            sourceTitles = mapOf("acceptanceTest" to "Other"),
+        ).assembleManifest()
+
+        tempDir.resolve("manifest.json").toFile().readText() shouldContain "\"title\": \"Code-side Title\""
+        tempDir.resolve("sources/uiTest/configuration.json").toFile().readText() shouldBe original
+    }
+
+    @Test
+    fun `sourceTitles override is idempotent when title already matches`(@TempDir tempDir: Path) {
+        prePopulate(tempDir, "uiTest", "UI Tests")
+        val before = tempDir.resolve("sources/uiTest/configuration.json").toFile().readText()
+        val log = CapturingLogger()
+
+        SiteAssembler(
+            siteRoot = tempDir,
+            expectedSourceIds = setOf("uiTest"),
+            kensaVersion = "0.8.0",
+            logger = log,
+            sourceTitles = mapOf("uiTest" to "UI Tests"),
+        ).assembleManifest()
+
+        tempDir.resolve("sources/uiTest/configuration.json").toFile().readText() shouldBe before
+    }
+
     private fun prePopulate(siteRoot: Path, sourceId: String, titleText: String) {
         val dir = siteRoot.resolve("sources/$sourceId")
         Files.createDirectories(dir)

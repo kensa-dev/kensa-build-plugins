@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>dev.kensa.it</groupId>
+  <artifactId>with-source-titles</artifactId>
+  <version>1.0.0</version>
+  <packaging>jar</packaging>
+
+  <repositories>
+    <repository>
+      <id>kensa-test-repo</id>
+      <url>${kensa.test.repo}</url>
+      <releases><enabled>true</enabled></releases>
+      <snapshots><enabled>true</enabled></snapshots>
+    </repository>
+  </repositories>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>dev.kensa</groupId>
+        <artifactId>kensa-maven-plugin</artifactId>
+        <version>${kensa.plugin.version}</version>
+        <executions>
+          <execution>
+            <id>assemble-site</id>
+            <phase>post-integration-test</phase>
+            <goals><goal>assemble-site</goal></goals>
+            <configuration>
+              <kensaCoreVersion>${kensa.test.core.version}</kensaCoreVersion>
+              <expectedSourceIds>
+                <expectedSourceId>uiTest</expectedSourceId>
+                <expectedSourceId>scenarioTest</expectedSourceId>
+              </expectedSourceIds>
+              <sourceTitles>
+                <uiTest>Build-declared UI Tests</uiTest>
+                <scenarioTest>Build-declared Scenario Tests</scenarioTest>
+              </sourceTitles>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

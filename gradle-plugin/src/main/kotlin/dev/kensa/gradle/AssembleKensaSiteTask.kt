@@ -8,6 +8,7 @@ import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.CacheableTask
@@ -32,6 +33,13 @@ abstract class AssembleKensaSiteTask : DefaultTask() {
 
     @get:Input
     abstract val kensaVersion: Property<String>
+
+    /**
+     * Per-source title overrides keyed by source id. Mirrors `kensa.sourceTitles` on the extension.
+     * Entries here win over whatever the test runtime wrote to `configuration.json`.
+     */
+    @get:Input
+    abstract val sourceTitles: MapProperty<String, String>
 
     /**
      * Per-source `configuration.json` files. Their content (titleText) feeds the manifest, and their presence
@@ -76,6 +84,7 @@ abstract class AssembleKensaSiteTask : DefaultTask() {
             expectedSourceIds = expectedSourceIds.get(),
             kensaVersion = kensaVersion.get(),
             logger = gradleLogger,
+            sourceTitles = sourceTitles.get(),
         ).assembleManifest()
 
         val jars = shellSource.files.map { it.toPath() }

@@ -85,6 +85,27 @@ class InvokerIntegrationTest {
     }
 
     @Test
+    fun `sourceTitles mojo parameter overrides per-source titleText in manifest and configuration json`(@TempDir tempDir: Path) {
+        val testRepo = tempDir.resolve("test-repo")
+        val kensaCoreVersion = "0.8.0-test-${UUID.randomUUID()}"
+        publishFakeKensaCore(testRepo, kensaCoreVersion)
+
+        copyFixture("with-source-titles", tempDir)
+        prePopulateSource(tempDir.resolve("target/kensa-site/sources/uiTest"), "Code-side UI")
+        prePopulateSource(tempDir.resolve("target/kensa-site/sources/scenarioTest"), "Code-side Scenario")
+
+        val result = runMaven(tempDir.toFile(), goals = listOf("verify"), testRepo = testRepo, kensaCoreVersion = kensaCoreVersion)
+
+        result.exitCode shouldBe 0
+        val manifest = tempDir.resolve("target/kensa-site/manifest.json").toFile().readText()
+        manifest shouldContain "\"title\": \"Build-declared UI Tests\""
+        manifest shouldContain "\"title\": \"Build-declared Scenario Tests\""
+
+        val uiConfig = tempDir.resolve("target/kensa-site/sources/uiTest/configuration.json").toFile().readText()
+        uiConfig shouldContain "\"titleText\": \"Build-declared UI Tests\""
+    }
+
+    @Test
     fun `re-running with a new kensa-core jar picks up the new shell content without a plugin republish`(@TempDir tempDir: Path) {
         val testRepo = tempDir.resolve("test-repo")
         val firstVersion = "0.8.0-test-${UUID.randomUUID()}"

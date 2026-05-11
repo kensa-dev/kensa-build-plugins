@@ -45,6 +45,21 @@ class AssembleKensaSiteMojo : AbstractMojo() {
     @Parameter(property = "kensa.core.version")
     var kensaCoreVersion: String? = null
 
+    /**
+     * Per-source display labels for site mode, keyed by source id. Entries set here override
+     * whatever the test runtime wrote to that source's `configuration.json`. When a source id
+     * has no entry, the per-source `titleText` from the test runtime is used unchanged.
+     *
+     * ```xml
+     * <sourceTitles>
+     *   <uiTest>UI Tests</uiTest>
+     *   <acceptanceTest>Acceptance Tests</acceptanceTest>
+     * </sourceTitles>
+     * ```
+     */
+    @Parameter
+    var sourceTitles: Map<String, String> = emptyMap()
+
     @Component
     private lateinit var repositorySystem: RepositorySystem
 
@@ -67,6 +82,7 @@ class AssembleKensaSiteMojo : AbstractMojo() {
             expectedSourceIds = expectedSourceIds.toSet(),
             kensaVersion = kensaVersion,
             logger = MavenLogAdapter(log),
+            sourceTitles = sourceTitles,
         ).assembleManifest()
 
         val resolvedVersion = kensaCoreVersion?.takeIf { it.isNotBlank() } ?: defaultKensaCoreVersion()
