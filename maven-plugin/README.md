@@ -27,7 +27,8 @@ The plugin and `dev.kensa:kensa-core` version independently (since plugin v0.9.0
 
 | Plugin     | Default kensa-core | Min kensa-core | Notes                                |
 | ---------- | ------------------ | -------------- | ------------------------------------ |
-| 0.9.x      | 0.8.0              | 0.8.0          | Plugin and kensa-core versioned independently; `<sourceTitles>` mojo parameter added in 0.9.1 |
+| 0.9.1      | 0.8.1              | 0.8.0          | Site-mode: `<sourceTitles>` mojo parameter, per-source component diagrams |
+| 0.9.0      | 0.8.0              | 0.8.0          | First decoupled release              |
 | 0.7.x      | 0.7.x              | —              | Same-version pairing (no override)   |
 
 > v0.8.0 was withdrawn — its POM declared an unpublished `dev.kensa:site-common` dep. Use 0.9.0 or later.

@@ -21,6 +21,8 @@ Internal:
 Migration:
 - Drop `systemProperty("kensa.source.title", ...)` calls from your `Test` task wiring in favour of `kensa { sourceTitles.put(id, "...") }`. Code-side `Kensa.konfigure { titleText = ... }` users keep working unchanged.
 
+Default kensa-core paired with this release is **0.8.1** (was 0.8.0). 0.8.1 carries the site-mode fix that surfaces per-source aggregate component diagrams correctly in the HTML UI. Override the default via `kensa { kensaCoreVersion.set(...) }` if you want to pin elsewhere.
+
 ### v0.9.0
 
 **Plugin versioning is now independent of kensa-core.** Previously the Gradle and Maven plugins were released in lockstep with kensa-core, sharing a version number. Plugin-only fixes no longer require a kensa-core release; kensa-core releases no longer require a plugin release.
